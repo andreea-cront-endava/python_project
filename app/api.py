@@ -9,6 +9,9 @@ from app.logic import fibonacci, pow_custom, factorial_custom
 from sqlalchemy.orm import Session
 from app.database.database import SessionLocal
 from app.database.database_models import OperationLog
+from app.auth import verify_api_key
+from app.stream_logger import log_event
+
 
 router = APIRouter()
 
@@ -20,10 +23,11 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/fibonacci")
+
+@router.post("/fibonacci", dependencies=[Depends(verify_api_key)])
 def compute_fibonacci(payload: FibonacciRequest, db: Session = Depends(get_db)):
+    result = fibonacci(payload.n)
     try:
-        result = fibonacci(payload.n)
         log = OperationLog(
             operation="fibonacci",
             input_data=str(payload.n),
@@ -33,12 +37,15 @@ def compute_fibonacci(payload: FibonacciRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(log)
 
+# 🔥 log în Redis stream
+        log_event("fibonacci", str(payload.n), str(result))
+
         return {"n": payload.n, "fibonacci": result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/pow")
+@router.post("/pow", dependencies=[Depends(verify_api_key)])
 def compute_pow(payload: PowRequest, db: Session = Depends(get_db)):
     result = pow_custom(payload.base, payload.exponent)
     log = OperationLog(
@@ -49,14 +56,14 @@ def compute_pow(payload: PowRequest, db: Session = Depends(get_db)):
     db.add(log)
     db.commit()
     db.refresh(log)
-
+    log_event("pow", f"{payload.base},{payload.exponent}", str(result))
     return {
         "base": payload.base,
         "exponent": payload.exponent,
         "result": result
     }
 
-@router.post("/factorial")
+@router.post("/factorial", dependencies=[Depends(verify_api_key)])
 def compute_factorial(payload: FactorialRequest, db: Session = Depends(get_db)):
     result = factorial_custom(payload.n)
     log = OperationLog(
@@ -67,6 +74,7 @@ def compute_factorial(payload: FactorialRequest, db: Session = Depends(get_db)):
     db.add(log)
     db.commit()
     db.refresh(log)
+    log_event("factorial", str(payload.n), str(result))
 
     return {
         "n": payload.n,

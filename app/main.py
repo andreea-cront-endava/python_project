@@ -7,8 +7,13 @@ from app.api import router
 from app.database.database import engine
 from app.database.database_models import Base
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI( )
+
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
+
 app.add_middleware(
   CORSMiddleware,
   allow_origins=["http://localhost:5173", "http://127.0.0.1:5173",],
