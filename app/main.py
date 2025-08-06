@@ -1,28 +1,33 @@
-
-#are rolul de a crea automat tabelele definite 
-#în modelele tale dacă ele nu există deja în baza de date.
-
+#main.py
+# Inițializează aplicația FastAPI și configurează CORS
+# Încarcă rutele pentru API și autentificare
+# Activează monitorizarea cu Prometheus (via prometheus_fastapi_instrumentator)
+# Creează automat tabelele din baza de date folosind SQLAlchemy
 from fastapi import FastAPI
 from app.api import router
+from app.auth import router as auth_router
 from app.database.database import engine
 from app.database.database_models import Base
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-app = FastAPI( )
-
-instrumentator = Instrumentator()
-instrumentator.instrument(app).expose(app)
+app = FastAPI()
 
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins=["http://localhost:5173", "http://127.0.0.1:5173",],
-  allow_methods=["*"],
-  allow_headers=["*"],
-  allow_credentials=True,
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+# Rute
+app.include_router(auth_router)
 app.include_router(router)
 
-
-# creează tabelele în SQLite dacă nu există
+#  Prometheus 
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
+#  Tabele
 Base.metadata.create_all(bind=engine)
+

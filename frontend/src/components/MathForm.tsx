@@ -1,3 +1,5 @@
+//mathForm.tsx
+//Formularul penntru cele 3 funcții matematice, validarea inputurilor și trimiterea cererilor către backend
 import { useState } from 'react';
 import type { JSX } from 'react';
 import type { FormEvent } from 'react';
@@ -128,12 +130,15 @@ export function MathForm<I extends object>({
 
     setLoading(true);
     setError(null);
+    
 
     try {
+     
       const res = await fetch(`/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
           'X-API-Key': apiKey
         },
         body: JSON.stringify(data),
@@ -145,6 +150,7 @@ export function MathForm<I extends object>({
       }
 
       const json = await res.json();
+      
       const resultValue = json.result ?? json.fibonacci ?? null;
 
       if (resultValue !== null) setResult(resultValue);
