@@ -1,3 +1,7 @@
+## Authors and Contributions
+-  Andreea Cronț
+-  Sanda Dobrenco
+
 # Math Microservice
 
 This microservice provides APIs to perform mathematical operations such as:
